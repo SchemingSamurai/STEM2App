@@ -258,8 +258,6 @@ public class MainActivity extends AppCompatActivity {
                     byte[] bytes = new byte[buffer.capacity()];
                     buffer.get(bytes);
                     save(bytes);
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
@@ -273,8 +271,9 @@ public class MainActivity extends AppCompatActivity {
 
                 Log.d("test", "collecting results");
                 boolean surfaceChange = runAlgorithm(bytes);
-                Log.d("test",""+surfaceChange);
-                mTTS.speak(""+surfaceChange,TextToSpeech.QUEUE_FLUSH,null,null);
+                if(surfaceChange) {
+                    mTTS.speak("Caution", TextToSpeech.QUEUE_FLUSH, null, null);
+                }
             }
         };
         reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);

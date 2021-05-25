@@ -64,8 +64,8 @@ def isColorChange(image):
   ylow = 4
   yhigh = 16
   ydiff = yhigh-ylow
-  xlow = 3
-  xhigh = 12
+  xlow = 5
+  xhigh = 10
   xdiff = xhigh-xlow
   img = np.asarray(Image.open(io.BytesIO(bytearray(image))))
   avgimg = np.mean(np.mean(np.asarray([np.asarray([img[img.shape[0] // m * i: img.shape[0] // m * (i+1), img.shape[1] // n * j: img.shape[1] // n * (j+1)] for j in range(xlow, xhigh)]) for i in range(ylow, yhigh)]),axis = 2), axis = 2)
