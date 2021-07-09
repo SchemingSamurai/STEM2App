@@ -217,8 +217,6 @@ public class MainActivity extends AppCompatActivity {
             List<Surface> outputSurfaces = new ArrayList<Surface>(1);
             outputSurfaces.add(reader.getSurface());
 
-
-
             final CameraCaptureSession.StateCallback callback = new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(CameraCaptureSession session) {
@@ -247,6 +245,7 @@ public class MainActivity extends AppCompatActivity {
         // Orientation
         int rotation = getWindowManager().getDefaultDisplay().getRotation();
         captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+        captureBuilder.set(CaptureRequest.JPEG_QUALITY, (byte) 50);
 
         ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
             @Override

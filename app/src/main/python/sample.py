@@ -64,8 +64,8 @@ def isColorChange(image):
   ylow = 4
   yhigh = 16
   ydiff = yhigh-ylow
-  xlow = 5
-  xhigh = 10
+  xlow = 6
+  xhigh = 9
   xdiff = xhigh-xlow
   img = np.asarray(Image.open(io.BytesIO(bytearray(image))))
   avgimg = np.mean(np.mean(np.asarray([np.asarray([img[img.shape[0] // m * i: img.shape[0] // m * (i+1), img.shape[1] // n * j: img.shape[1] // n * (j+1)] for j in range(xlow, xhigh)]) for i in range(ylow, yhigh)]),axis = 2), axis = 2)
@@ -75,8 +75,8 @@ def isColorChange(image):
       c1 = avgimg[i][j]
       c2 = avgimg[i+1][j]
       c3 = avgimg[i][j+1]
-      if not areClose(c1,c2) and (not areShades(c1,c2) or monotoniccol(i,j, ydiff, xdiff, avgimg)):
+      if not areClose(c1,c2):# and (not areShades(c1,c2) or monotoniccol(i,j, ydiff, xdiff, avgimg)):
         change = True
-      if not areClose(c1,c3) and (not areShades(c1,c3) or monotonicrow(i,j, ydiff, xdiff, avgimg)):
+      if not areClose(c1,c3):# and (not areShades(c1,c3) or monotonicrow(i,j, ydiff, xdiff, avgimg)):
         change = True
   return change
