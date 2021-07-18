@@ -27,6 +27,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
+import android.util.Range;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.TextureView;
@@ -58,6 +59,10 @@ public class MainActivity extends AppCompatActivity {
     private TextToSpeech mTTS;
     private static final String TAG = "AndroidCameraApi";
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
+    private static String cameraId;
+    private static boolean focusDistanceMeasuredInDiopters;
+    private static float CAMERA_DISTANCE = (float) (1 / 1.905);
+
     Python py;
 
     static {
@@ -247,6 +252,16 @@ public class MainActivity extends AppCompatActivity {
         captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
         captureBuilder.set(CaptureRequest.JPEG_QUALITY, (byte) 50);
 
+        captureBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, getRange());
+        captureBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
+
+        if(focusDistanceMeasuredInDiopters){
+            captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
+            captureBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, CAMERA_DISTANCE);
+        } else {
+            captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
+        }
+
         ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
             @Override
             public void onImageAvailable(ImageReader reader) {
@@ -280,13 +295,47 @@ public class MainActivity extends AppCompatActivity {
         return captureBuilder;
     }
 
+    private Range<Integer> getRange() {
+        CameraManager mCameraManager = (CameraManager) this.getSystemService(Context.CAMERA_SERVICE);
+        CameraCharacteristics chars = null;
+        try {
+            chars = mCameraManager.getCameraCharacteristics(cameraId);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        Range<Integer>[] ranges = chars.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+
+        Range<Integer> result = null;
+
+        for (Range<Integer> range : ranges) {
+            //The frame rate cannot be too low, greater than 10
+            if (range.getLower()<10)
+                continue;
+            if (result==null)
+                result = range;
+                         // FPS lower limit is less than 15, when the low light can ensure sufficient exposure time, improve brightness. The larger the span of the range is, the better the FPS is when the light source is sufficient, the preview is smoother, the FPS is lower when the light source is not enough, and the brightness is better.
+            else if (range.getLower()<=15 && (range.getUpper()-range.getLower())>(result.getUpper()-result.getLower()))
+                result = range;
+        }
+        return result;
+    }
+
     private void openCamera() {
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         Log.e(TAG, "is camera open");
         try {
-            String cameraId = manager.getCameraIdList()[0];
+            cameraId = manager.getCameraIdList()[0];
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+
+            if(characteristics.get(CameraCharacteristics.LENS_INFO_FOCUS_DISTANCE_CALIBRATION) == CameraCharacteristics.LENS_INFO_FOCUS_DISTANCE_CALIBRATION_CALIBRATED ||
+                    characteristics.get(CameraCharacteristics.LENS_INFO_FOCUS_DISTANCE_CALIBRATION) == CameraCharacteristics.LENS_INFO_FOCUS_DISTANCE_CALIBRATION_APPROXIMATE){
+                focusDistanceMeasuredInDiopters = true;
+            } else {
+                focusDistanceMeasuredInDiopters = false;
+            }
+            Log.d("Chris", ""+focusDistanceMeasuredInDiopters);
+
             assert map != null;
             imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
             // Add permission for camera and let user grant the permission
